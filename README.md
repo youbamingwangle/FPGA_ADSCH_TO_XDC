@@ -1,5 +1,9 @@
 # FPGA_ADSCH_TO_XDC
 Generate the Vivado XDC file from Altium Designer SCH 
+## Altium Designer 导出说明：
+1. 在AD中FPGA器件上右键选择 Part Actions → Configure Pin Swapping... 
+2. 全选表格后复制到剪贴板
+3. 粘贴到Excel中并保存
 ## 表格制作说明：
 **1. 原始表格增加一列判断公式 =A1=C1** 
 ![image](https://github.com/youbamingwangle/FPGA_ADSCH_TO_XDC/blob/main/readmePics/1.png)  
