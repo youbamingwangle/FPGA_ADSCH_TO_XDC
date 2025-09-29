@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel转XDC约束生成器 - 专业版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #1a2980 0%, #26d0ce 100%);
+            color: #0f172a;
+            min-height: 100vh;
+            padding: 40px 20px;
+            background-attachment: fixed;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+        header {
+            background: linear-gradient(to right, #4361ee, #7209b7);
+            color: white;
+            padding: 25px 30px;
+        }
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+            padding: 30px;
+        }
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .panel {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15);
+        }
+        .upload-area {
+            border: 2px dashed rgba(67, 97, 238, 0.3);
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(to bottom, rgba(250, 250, 255, 0.7), rgba(230, 240, 255, 0.5));
+        }
+        textarea {
+            width: 100%;
+            min-height: 300px;
+            padding: 15px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: none;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+            color: #1e293b;
+            overflow: auto;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+        .btn {
+            padding: 12px 20px;
+            background: linear-gradient(to right, #4361ee, #3a56d4);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+        select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: white;
+            font-size: 14px;
+            color: #1e293b;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+            transition: all 0.3s ease;
+        }
+        .status-bar {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .status-success {
+            background: rgba(74, 222, 128, 0.15);
+            color: #166534;
+            border: 1px solid rgba(74, 222, 128, 0.3);
+        }
+        .status-error {
+            background: rgba(248, 113, 113, 0.15);
+            color: #b91c1c;
+            border: 1px solid rgba(248, 113, 113, 0.3);
+        }
+        .option-group {
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+        }
+        .option-label {
+            margin-left: 10px;
+            font-weight: 500;
+        }
+        .filename-input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            margin-top: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.03);
+        }
+        .help-text {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f9ff;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #1e40af;
+        }
+        .help-text ol {
+            margin-left: 20px;
+        }
+        .help-text li {
+            margin-bottom: 8px;
+        }
+        .help-text code {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-family: 'Fira Code', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        .digit-signal-note {
+            margin: 10px 0;
+            padding: 10px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-microchip"></i> Excel转XDC约束生成器 - 专业版</h1>
+            <p>信号引脚约束生成工具</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <h2><i class="fas fa-file-upload"></i> 数据源与选项</h2>
+                
+                <div class="help-text">
+                    <strong>AD操作指南：</strong>
+                    <ol>
+                        <li>在AD中FPGA器件上右键选择 <code>Part Actions → Configure Pin Swapping...</code></li>
+                        <li>全选表格后复制到剪贴板</li>
+                        <li>粘贴到Excel中并保存</li>
+                        <li>增加一列判断公式 <code>=A1=C1</code></li>
+                        <li>筛选结果为 <code>FALSE</code> 的行</li>
+                        <li>在 <code>TYPE</code> 列筛选 <code>I/O</code></li>
+                        <li>全选后保存为新工作表</li>
+                        <li>仅保留 <code>Designator</code> 和 <code>Net</code> 列</li>
+                        <li>删除首行和空行</li>
+                        <li>使用本工具读取处理后的Excel文件</li>
+                        <li>生成并保存XDC约束文件</li>
+                        <li>因为AD中命名的多样性，无法自动分类时钟信号和IO信号，时钟信号需要手动调整IOSTANDARD</li>
+                    </ol>
+                </div>
+                
+                <div class="digit-signal-note">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>注意：</strong>数字开头的信号(如123_BUS)会自动添加前缀P(变为P123_BUS)
+                </div>
+                
+                <div class="upload-area" id="drop-zone">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <div class="upload-text">上传Excel引脚表</div>
+                    <div class="upload-subtext">支持拖放或点击选择文件</div>
+                    <input type="file" id="excel-file" accept=".xlsx, .xls" style="display: none;">
+                </div>
+                
+                <div class="options-container">
+                    <h3><i class="fas fa-sliders-h"></i> 约束配置</h3>
+                    <div>
+                        <label for="iostandard-select">I/O 标准:</label>
+                        <select id="iostandard-select">
+                            <option value="LVCMOS33">LVCMOS33 (3.3V)</option>
+                            <option value="LVCMOS25">LVCMOS25 (2.5V)</option>
+                            <option value="LVCMOS18">LVCMOS18 (1.8V)</option>
+                            <option value="LVCMOS15">LVCMOS15 (1.5V)</option>
+                            <option value="LVCMOS12">LVCMOS12 (1.2V)</option>
+                            <option value="LVDS_25">LVDS (2.5V)</option>
+                            <option value="LVDS_33" selected>LVDS (3.3V)</option>
+                            <option value="HSTL_I">HSTL-I</option>
+                            <option value="HSTL_II">HSTL-II</option>
+                            <option value="SSTL18_I">SSTL18-I</option>
+                            <option value="SSTL18_II">SSTL18-II</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="drive-strength-select">驱动强度:</label>
+                        <select id="drive-strength-select">
+                            <option value="">默认</option>
+                            <option value="4">4mA</option>
+                            <option value="8">8mA</option>
+                            <option value="12" selected>12mA</option>
+                            <option value="16">16mA</option>
+                            <option value="24">24mA</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <input type="checkbox" id="bus-detection" checked>
+                        <label for="bus-detection" class="option-label">自动检测总线信号</label>
+                    </div>
+                    
+                    <div>
+                        <label for="xdc-filename">XDC文件名:</label>
+                        <input type="text" id="xdc-filename" class="filename-input" placeholder="输入XDC文件名 (默认: constraints.xdc)" value="constraints.xdc">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2><i class="fas fa-code"></i> 生成的XDC约束</h2>
+                <textarea id="xdc-content" placeholder="XDC文件内容将在这里显示..."></textarea>
+                <button id="download-xdc-btn" class="btn" disabled>
+                    <i class="fas fa-file-download"></i> 下载XDC
+                </button>
+                <div class="status-bar" id="status">
+                    <i class="fas fa-info-circle"></i>
+                    <span>等待文件上传</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取DOM元素
+            const fileInput = document.getElementById('excel-file');
+            const dropZone = document.getElementById('drop-zone');
+            const xdcContent = document.getElementById('xdc-content');
+            const downloadBtn = document.getElementById('download-xdc-btn');
+            const status = document.getElementById('status');
+            const busDetection = document.getElementById('bus-detection');
+            const iostdSelect = document.getElementById('iostandard-select');
+            const driveStrengthSelect = document.getElementById('drive-strength-select');
+            const xdcFilenameInput = document.getElementById('xdc-filename');
+            
+            // 存储当前解析的数据
+            let currentData = null;
+            
+            // 文件拖放处理
+            dropZone.addEventListener('click', () => fileInput.click());
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = '#4361ee';
+                dropZone.style.background = 'linear-gradient(to bottom, rgba(250, 250, 255, 0.9), rgba(230, 240, 255, 0.7))';
+            });
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.style.borderColor = 'rgba(67, 97, 238, 0.3)';
+                dropZone.style.background = 'linear-gradient(to bottom, rgba(250, 250, 255, 0.7), rgba(230, 240, 255, 0.5))';
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.style.borderColor = 'rgba(67, 97, 238, 0.3)';
+                dropZone.style.background = 'linear-gradient(to bottom, rgba(250, 250, 255, 0.7), rgba(230, 240, 255, 0.5))';
+                if (e.dataTransfer.files.length) {
+                    fileInput.files = e.dataTransfer.files;
+                    handleFile(fileInput.files[0]);
+                }
+            });
+            
+            // 文件选择处理
+            fileInput.addEventListener('change', function() {
+                if (this.files.length) {
+                    handleFile(this.files[0]);
+                }
+            });
+            
+            // I/O标准和驱动强度改变时实时更新
+            iostdSelect.addEventListener('change', updateXdcPreview);
+            driveStrengthSelect.addEventListener('change', updateXdcPreview);
+            
+            // 文件处理函数
+            function handleFile(file) {
+                const reader = new FileReader();
+                status.innerHTML = `<i class="fas fa-sync-alt fa-spin"></i> 正在处理文件...`;
+                status.className = 'status-bar';
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheet];
+                        currentData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        generateXDC(currentData);
+                        status.innerHTML = `<i class="fas fa-check-circle"></i> 成功处理 ${file.name}`;
+                        status.className = 'status-bar status-success';
+                    } catch (error) {
+                        console.error(error);
+                        xdcContent.value = `错误: ${error.message}`;
+                        status.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 错误: ${error.message}`;
+                        status.className = 'status-bar status-error';
+                    }
+                };
+                reader.onerror = function() {
+                    xdcContent.value = '错误: 文件读取失败';
+                    status.innerHTML = `<i class="fas fa-exclamation-triangle"></i> 文件读取失败`;
+                    status.className = 'status-bar status-error';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            
+            // 更新XDC预览
+            function updateXdcPreview() {
+                if (currentData) {
+                    generateXDC(currentData);
+                }
+            }
+            
+            // 第一步：去掉数字前的下划线
+            function removeUnderscoreBeforeNumber(signalName) {
+                return signalName.replace(/_(\d+)$/, '$1');
+            }
+            
+            // 第二步：转换为总线格式
+            function convertToBusFormat(signalName) {
+                const match = signalName.match(/^([A-Za-z_]+)(\d+)$/);
+                if (match) {
+                    return `${match[1]}[${match[2]}]`;
+                }
+                return signalName;
+            }
+            
+            // 处理数字开头的信号
+            function processDigitStartSignals(signalName) {
+                if (/^\d/.test(signalName)) {
+                    return 'P' + signalName;
+                }
+                return signalName;
+            }
+            
+            // 总线信号检测
+            function detectBusSignals(signals) {
+                if (!busDetection.checked) return signals;
+                
+                signals.forEach(sig => {
+                    // 处理数字开头的信号
+                    sig.signal = processDigitStartSignals(sig.signal);
+                    
+                    // 第一步：先去掉数字前的下划线
+                    const withoutUnderscore = removeUnderscoreBeforeNumber(sig.signal);
+                    
+                    // 第二步：再转换为总线格式
+                    if (withoutUnderscore !== sig.signal) {
+                        sig.intermediateName = withoutUnderscore;
+                        sig.formattedName = convertToBusFormat(withoutUnderscore);
+                    } else {
+                        // 如果没有下划线，直接尝试转换
+                        sig.formattedName = convertToBusFormat(sig.signal);
+                    }
+                });
+                
+                return signals;
+            }
+            
+            // 生成XDC内容
+            function generateXDC(data) {
+                const iostd = iostdSelect.value;
+                const driveStrength = driveStrengthSelect.value;
+                let signals = [];
+                
+                // 解析Excel数据
+                for (let i = 0; i < data.length; i++) {
+                    const row = data[i];
+                    if (!row || row.length < 2) continue;
+                    
+                    const pin = String(row[0]).trim();
+                    const signal = String(row[1]).trim();
+                    
+                    if (pin && signal) {
+                        signals.push({
+                            pin: pin,
+                            signal: signal
+                        });
+                    }
+                }
+                
+                // 检测总线信号
+                signals = detectBusSignals(signals);
+                
+                // 生成XDC内容
+                let output = `# Xilinx Vivado XDC 约束文件\n`;
+                output += `# 由Excel引脚表自动生成\n`;
+                output += `# 电平标准: ${iostd} | 驱动强度: ${driveStrength ? driveStrength + 'mA' : '默认'}\n`;
+                output += `# 生成时间: ${new Date().toLocaleString()}\n\n`;
+                
+                // 添加转换说明
+                let hasDigitSignals = signals.some(sig => /^\d/.test(sig.signal));
+                if (hasDigitSignals) {
+                    output += `# 注意: 数字开头的信号已自动添加前缀P (如123_BUS → P123_BUS)\n`;
+                }
+                
+                output += `# 总线信号转换说明:\n`;
+                signals.forEach(sig => {
+                    if (sig.formattedName) {
+                        output += `# ${sig.signal}`;
+                        if (sig.intermediateName) {
+                            output += ` → ${sig.intermediateName}`;
+                        }
+                        output += ` → ${sig.formattedName}\n`;
+                    }
+                });
+                output += `\n`;
+                
+                // 生成约束内容
+                signals.forEach(sig => {
+                    const signalName = sig.formattedName || sig.signal;
+                    output += `set_property PACKAGE_PIN ${sig.pin} [get_ports {${signalName}}]\n`;
+                    output += `set_property IOSTANDARD ${iostd} [get_ports {${signalName}}]\n`;
+                    if (driveStrength) {
+                        output += `set_property DRIVE ${driveStrength} [get_ports {${signalName}}]\n`;
+                    }
+                    output += `\n`;
+                });
+                
+                xdcContent.value = output;
+                downloadBtn.disabled = false;
+            }
+            
+            // 下载功能
+            downloadBtn.addEventListener('click', function() {
+                const content = xdcContent.value;
+                if (!content) return;
+                
+                const blob = new Blob([content], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = xdcFilenameInput.value.trim() || 'constraints.xdc';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        });
+    </script>
+</body>
+</html>
